@@ -1,0 +1,169 @@
+<html>
+  <body onload="loadPurchased()">
+    <h1>Products</h1>
+    <div id="purchasedProducts" style="border: 1">
+      <h1 id="purchased"></h1>
+    </div>
+    <br />
+    <br />
+
+    <div id="productsData"></div>
+    <script>
+      async function loadPurchased() {
+        //Get Total Purchased Products
+        const resp = await fetch("http://127.0.0.1:5000/purchases");
+
+        let purchases = await resp.json();
+
+        const total = document.getElementById("purchased");
+        total.innerText = `Purchased Products: ${purchases.length}`;
+
+        //Get all Products Data
+        const resp2 = await fetch("http://127.0.0.1:5000/products");
+
+        if (resp2.ok) {
+          let products = await resp2.json();
+
+          const productsData = document.getElementById("productsData");
+
+          products.forEach(async (product) => {
+            const productDiv = document.createElement("div");
+            productDiv.style.border = "thin solid #000";
+
+            const productName = document.createElement("label");
+            productName.innerText = `Name: `;
+
+            const productTitle = document.createElement("a");
+            productTitle.href = "Edit_Product.html";
+            productTitle.innerText = `${product.name}`;
+            productTitle.onclick = async () => {
+              sessionStorage.setItem("product_id", product.id);
+            };
+            productName.appendChild(productTitle);
+
+            const productPrice = document.createElement("label");
+            productPrice.innerHTML = ` |Price: ${product.price}`;
+
+            const productQuantity = document.createElement("label");
+            productQuantity.innerHTML = ` |Quantity: ${product.quantity}`;
+
+            productDiv.appendChild(productName);
+            productDiv.appendChild(productPrice);
+            productDiv.appendChild(productQuantity);
+
+            productsData.appendChild(productDiv);
+
+            //A region with all customers that bought the product
+            const tbl = document.createElement("table");
+            const titles = document.createElement("tr");
+            const names = document.createElement("td");
+            const dates = document.createElement("td");
+            const br = document.createElement("br");
+            const br2 = document.createElement("br");
+
+            tbl.border = "1";
+
+            names.innerText = "Customers";
+            dates.innerText = "Purchased dates";
+
+            titles.appendChild(names);
+            titles.appendChild(dates);
+            tbl.appendChild(titles);
+
+            purchases.forEach(async (purchase) => {
+              if (product.id == purchase.productId) {
+                const tr = document.createElement("tr");
+                const name = document.createElement("td");
+                const date = document.createElement("td");
+
+                const customerresp = await fetch(
+                  `http://127.0.0.1:5000/customers/${purchase.customerId}`
+                );
+
+                let customer = await customerresp.json();
+
+                const customerTitle = document.createElement("a");
+                customerTitle.href = "Edit_Customer.html";
+                customerTitle.innerText = `${customer.fName} ${customer.lName}`;
+                customerTitle.onclick = async () => {
+                  sessionStorage.setItem("customer_id", purchase.customerId);
+                };
+
+                date.innerText = purchase.date;
+
+                name.appendChild(customerTitle);
+                tr.appendChild(name);
+                tr.appendChild(date);
+                tbl.appendChild(tr);
+              }
+            });
+
+            productsData.appendChild(tbl);
+
+            const buyBtn = document.createElement("button");
+            buyBtn.innerText = "Add";
+            productsData.appendChild(buyBtn);
+
+            const buyDiv = document.createElement("div");
+            buyDiv.style.display = "none";
+            productsData.appendChild(buyDiv);
+            productsData.appendChild(br);
+            productsData.appendChild(br2);
+
+            const customerSelect = document.createElement("select");
+            const disOption = document.createElement("option");
+            disOption.disabled = true;
+            customerSelect.appendChild(disOption);
+
+            const customersresp = await fetch(
+              `http://127.0.0.1:5000/customers/`
+            );
+            let customers = await customersresp.json();
+
+            customers.forEach((customer) => {
+              const option = document.createElement("option");
+              option.innerText = `${customer.fName} ${customer.lName}`;
+              option.value = customer.id;
+              customerSelect.appendChild(option);
+            });
+
+            buyDiv.appendChild(customerSelect);
+
+            const saveBtn = document.createElement("button");
+            saveBtn.innerText = "Save";
+            buyDiv.appendChild(saveBtn);
+
+            buyBtn.onclick = () => {
+              buyDiv.style.display = "block";
+            };
+
+            saveBtn.onclick = async () => {
+              const date = new Date();
+              const currday =
+                date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
+
+              const obj = {
+                customerId: customerSelect.value,
+                date: `${date.getFullYear()}-${date.getMonth() + 1}-${currday}`,
+                id: purchases.length + 1,
+                productId: product.id,
+              };
+
+              const fetchParams = {
+                method: "POST",
+                body: JSON.stringify(obj),
+                headers: { "Content-type": "application/json" },
+              };
+              const response = await fetch(
+                "http://127.0.0.1:5000/purchases/",
+                fetchParams
+              );
+
+              location.reload();
+            };
+          });
+        }
+      }
+    </script>
+  </body>
+</html>

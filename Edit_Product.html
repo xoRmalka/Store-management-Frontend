@@ -1,0 +1,165 @@
+<html>
+  <body onload="loadProduct()">
+    <div id="productData"></div>
+    <div id="customersData" style="border: thin solid #000">
+      <ul id="customersList">
+        <h3>Customers:</h3>
+      </ul>
+    </div>
+    <script>
+      async function loadProduct() {
+        const productId = sessionStorage.getItem("product_id");
+        //Region 1
+        const resp = await fetch(`http://127.0.0.1:5000/products/${productId}`);
+        if (resp.ok) {
+          let product = await resp.json();
+
+          const productData = document.getElementById("productData");
+
+          const productForm = document.createElement("div");
+          productForm.style.border = "thin solid #000";
+
+          //NAME
+          const nameP = document.createElement("span");
+          nameP.innerText = "Name: ";
+
+          const nameInp = document.createElement("input");
+          nameInp.value = product.name;
+          nameInp.id = `name-${product.id}`;
+
+          const br1 = document.createElement("br");
+          const br2 = document.createElement("br");
+
+          productForm.appendChild(nameP);
+          productForm.appendChild(nameInp);
+          productForm.appendChild(br1);
+          productForm.appendChild(br2);
+
+          //Price
+          const priceP = document.createElement("span");
+          priceP.innerText = "Price: ";
+
+          const priceInp = document.createElement("input");
+          priceInp.value = product.price;
+          priceInp.id = `price-${product.id}`;
+
+          const br3 = document.createElement("br");
+          const br4 = document.createElement("br");
+
+          productForm.appendChild(priceP);
+          productForm.appendChild(priceInp);
+          productForm.appendChild(br3);
+          productForm.appendChild(br4);
+
+          //Quantity
+          const quantityP = document.createElement("span");
+          quantityP.innerText = "Quantity: ";
+
+          const quantityInp = document.createElement("input");
+          quantityInp.value = product.quantity;
+          quantityInp.id = `quantity-${product.id}`;
+
+          const br5 = document.createElement("br");
+          const br6 = document.createElement("br");
+
+          productForm.appendChild(quantityP);
+          productForm.appendChild(quantityInp);
+          productForm.appendChild(br5);
+          productForm.appendChild(br6);
+
+          //Update btn
+          const updateBtn = document.createElement("button");
+          updateBtn.innerText = "Update";
+          updateBtn.onclick = async () => {
+            const obj = {
+              name: document.getElementById(`name-${product.id}`).value,
+              price: document.getElementById(`price-${product.id}`).value,
+              quantity: document.getElementById(`quantity-${product.id}`).value,
+            };
+            const fetchParams = {
+              method: "PUT",
+              body: JSON.stringify(obj),
+              headers: { "Content-type": "application/json" },
+            };
+
+            const response = await fetch(
+              `http://127.0.0.1:5000/products/${productId}`,
+              fetchParams
+            );
+            if (response.ok) {
+              const status = await response.json();
+              console.log(status);
+            } else {
+              console.log("err");
+            }
+          };
+          productForm.appendChild(updateBtn);
+
+          //Delete btn
+          const deleteBtn = document.createElement("button");
+          deleteBtn.innerText = "Delete";
+          deleteBtn.onclick = async () => {
+            const fetchParams = {
+              method: "DELETE",
+            };
+            //delete product purchases
+            const resp = await fetch(`http://127.0.0.1:5000/purchases`);
+            if (resp.ok) {
+              let purchases = await resp.json();
+
+              purchases = purchases.filter(
+                (purchase) => purchase.productId === productId
+              );
+
+              purchases.forEach(async (purchase) => {
+                const response = await fetch(
+                  `http://127.0.0.1:5000/purchases/${purchase.id}`,
+                  fetchParams
+                );
+                const status = await response.json();
+                console.log(status);
+              });
+            }
+            //delete product
+            const response = await fetch(
+              `http://127.0.0.1:5000/products/${productId}`,
+              fetchParams
+            );
+
+            const status = await response.json();
+            console.log(status);
+
+            window.location.href = `Products.html`;
+          };
+          productForm.appendChild(deleteBtn);
+
+          productData.appendChild(productForm);
+        }
+        //Region 2
+        const resp2 = await fetch(`http://127.0.0.1:5000/customers`);
+        if (resp2.ok) {
+          let customers = await resp2.json();
+
+          const customersList = document.getElementById("customersList");
+
+          customers.forEach((customer) => {
+            const li = document.createElement("li");
+
+            const customerTitle = document.createElement("a");
+            customerTitle.href = "Edit_Customer.html";
+            customerTitle.innerText = `${customer.fName} ${customer.lName}`;
+            customerTitle.onclick = async () => {
+              sessionStorage.setItem("customer_id", customer.id);
+            };
+
+            const br = document.createElement("br");
+
+            li.appendChild(customerTitle);
+            customersList.appendChild(li);
+            customersList.appendChild(br);
+          });
+        }
+      }
+    </script>
+  </body>
+</html>

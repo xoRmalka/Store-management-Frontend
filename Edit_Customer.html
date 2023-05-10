@@ -1,0 +1,181 @@
+<html>
+  <body onload="loadCustomer()">
+    <div id="customerData"></div>
+    <script>
+      async function loadCustomer() {
+        const customerId = sessionStorage.getItem("customer_id");
+
+        //Region 1
+        const resp = await fetch(
+          `http://127.0.0.1:5000/customers/${customerId}`
+        );
+        if (resp.ok) {
+          let customer = await resp.json();
+
+          const customerData = document.getElementById("customerData");
+
+          const customerForm = document.createElement("div");
+          customerForm.style.border = "thin solid #000";
+
+          //First NAME
+          const fNameP = document.createElement("span");
+          fNameP.innerText = "First Name: ";
+
+          const fNameInp = document.createElement("input");
+          fNameInp.value = customer.fName;
+          fNameInp.id = `fname-${customer.id}`;
+
+          const br1 = document.createElement("br");
+          const br2 = document.createElement("br");
+
+          customerForm.appendChild(fNameP);
+          customerForm.appendChild(fNameInp);
+          customerForm.appendChild(br1);
+          customerForm.appendChild(br2);
+
+          //Last Name
+          const lNameP = document.createElement("span");
+          lNameP.innerText = "Last Name: ";
+
+          const lNameInp = document.createElement("input");
+          lNameInp.value = customer.lName;
+          lNameInp.id = `lname-${customer.id}`;
+
+          const br3 = document.createElement("br");
+          const br4 = document.createElement("br");
+
+          customerForm.appendChild(lNameP);
+          customerForm.appendChild(lNameInp);
+          customerForm.appendChild(br3);
+          customerForm.appendChild(br4);
+
+          //City
+          const cityP = document.createElement("span");
+          cityP.innerText = "City: ";
+
+          const cityInp = document.createElement("input");
+          cityInp.value = customer.city;
+          cityInp.id = `city-${customer.id}`;
+
+          const br5 = document.createElement("br");
+          const br6 = document.createElement("br");
+
+          customerForm.appendChild(cityP);
+          customerForm.appendChild(cityInp);
+          customerForm.appendChild(br5);
+          customerForm.appendChild(br6);
+
+          //Update btn
+          const updateBtn = document.createElement("button");
+          updateBtn.innerText = "Update";
+          updateBtn.onclick = async () => {
+            const obj = {
+              fName: document.getElementById(`fname-${customer.id}`).value,
+              lName: document.getElementById(`lname-${customer.id}`).value,
+              city: document.getElementById(`city-${customer.id}`).value,
+            };
+            const fetchParams = {
+              method: "PUT",
+              body: JSON.stringify(obj),
+              headers: { "Content-type": "application/json" },
+            };
+
+            const response = await fetch(
+              `http://127.0.0.1:5000/customers/${customerId}`,
+              fetchParams
+            );
+            if (response.ok) {
+              const status = await response.json();
+              console.log(status);
+            } else {
+              console.log("err");
+            }
+          };
+          customerForm.appendChild(updateBtn);
+
+          //Delete btn
+          const deleteBtn = document.createElement("button");
+          deleteBtn.innerText = "Delete";
+          deleteBtn.onclick = async () => {
+            const fetchParams = {
+              method: "DELETE",
+            };
+            //delete customer purchases
+            const resp = await fetch(`http://127.0.0.1:5000/purchases`);
+            if (resp.ok) {
+              let purchases = await resp.json();
+
+              purchases = purchases.filter(
+                (purchase) => purchase.customerId === customerId
+              );
+
+              purchases.forEach(async (purchase) => {
+                const response = await fetch(
+                  `http://127.0.0.1:5000/purchases/${purchase.id}`,
+                  fetchParams
+                );
+                const status = await response.json();
+                console.log(status);
+              });
+            }
+
+            //delete customer
+            const response = await fetch(
+              `http://127.0.0.1:5000/customers/${customerId}`,
+              fetchParams
+            );
+
+            const status = await response.json();
+            console.log(status);
+
+            window.location.href = `Customers.html`;
+          };
+
+          customerForm.appendChild(deleteBtn);
+          customerData.appendChild(customerForm);
+        }
+
+        //Region 2
+        const resp2 = await fetch(`http://127.0.0.1:5000/purchases`);
+        if (resp2.ok) {
+          let purchases = await resp2.json();
+
+          const customerData = document.getElementById("customerData");
+
+          const purchasesData = document.createElement("div");
+          purchasesData.style.border = "thin solid #000";
+
+          const purchasesList = document.createElement("ul");
+          purchasesList.innerText = "Purchased products:";
+
+          purchases = purchases.filter(
+            (purchase) => purchase.customerId === customerId
+          );
+
+          purchases.forEach(async (purchase) => {
+            const resp = await fetch(
+              `http://127.0.0.1:5000/products/${purchase.productId}`
+            );
+
+            if (resp.ok) {
+              let product = await resp.json();
+
+              const purchaseLi = document.createElement("li");
+              const purchaseTitle = document.createElement("a");
+              purchaseTitle.href = "Edit_Product.html";
+              purchaseTitle.innerText = product.name;
+              purchaseTitle.onclick = async () => {
+                sessionStorage.setItem("product_id", product.id);
+              };
+              purchaseLi.appendChild(purchaseTitle);
+              purchasesList.appendChild(purchaseLi);
+            }
+
+            purchasesData.appendChild(purchasesList);
+            customerData.appendChild(purchasesData);
+          });
+        }
+      }
+    </script>
+  </body>
+</html>

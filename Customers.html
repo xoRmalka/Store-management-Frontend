@@ -1,0 +1,148 @@
+<html>
+  <body onload="loadCustomers()">
+    <h1>Customers</h1>
+    <div id="CustomersData" style="border: thin solid #000">
+      <table border="1" id="CustomersTbl">
+        <tr>
+          <td>Customer Name</td>
+          <td>list of products</td>
+          <td>list of purchased dates</td>
+        </tr>
+      </table>
+      <br />
+      <button onclick="buyProduct()">Buy Product</button>
+      <div id="buyProduct" style="border: thin solid #000; display: none">
+        Select Customer:
+        <select id="customerSelet">
+          <option disabled selected></option>
+        </select>
+        <br />
+        Select Product:
+
+        <select id="productSelet">
+          <option disabled selected></option>
+        </select>
+        <br />
+      </div>
+    </div>
+
+    <script>
+      async function loadCustomers() {
+        const resp = await fetch("http://127.0.0.1:5000/customers");
+        let customers = await resp.json();
+        const CustomersTbl = document.getElementById("CustomersTbl");
+
+        customers.forEach(async (customer) => {
+          //customer table row
+          const customerTr = document.createElement("tr");
+          //customer name table data
+          const customerName = document.createElement("td");
+          customerName.innerText = `${customer.fName} ${customer.lName} `;
+
+          //list of products
+          const productsTd = document.createElement("td");
+          const productsList = document.createElement("ul");
+          const datesTd = document.createElement("td");
+          const datesList = document.createElement("ul");
+
+          const resp2 = await fetch(
+            `http://127.0.0.1:5000/purchases?customerId=${customer.id}`
+          );
+          let purchases = await resp2.json();
+
+          purchases.forEach(async (purchase) => {
+            //ask for product name
+            const productRes = await fetch(
+              `http://127.0.0.1:5000/products/${purchase.productId}`
+            );
+            let product = await productRes.json();
+
+            const li = document.createElement("li");
+            const productTitle = document.createElement("a");
+            productTitle.href = "Edit_Product.html";
+            productTitle.innerText = product.name;
+            productTitle.onclick = async () => {
+              sessionStorage.setItem("product_id", product.id);
+            };
+
+            li.appendChild(productTitle);
+            productsList.appendChild(li);
+
+            //list of dates
+
+            const liDate = document.createElement("li");
+            liDate.innerText = purchase.date;
+            datesList.appendChild(liDate);
+          });
+
+          productsTd.appendChild(productsList);
+          datesTd.appendChild(datesList);
+
+          customerTr.appendChild(customerName);
+          customerTr.appendChild(productsTd);
+          customerTr.appendChild(datesTd);
+
+          CustomersTbl.appendChild(customerTr);
+        });
+      }
+
+      async function buyProduct() {
+        const buyProductDiv = document.getElementById("buyProduct");
+        buyProductDiv.style.display = "block";
+
+        const customerSelet = document.getElementById("customerSelet");
+        const resp = await fetch("http://127.0.0.1:5000/customers");
+        let customers = await resp.json();
+
+        customers.forEach((customer) => {
+          const option = document.createElement("option");
+          option.innerText = `${customer.fName} ${customer.lName}`;
+          option.value = customer.id;
+          customerSelet.appendChild(option);
+        });
+        const productSelet = document.getElementById("productSelet");
+        const resp2 = await fetch("http://127.0.0.1:5000/products");
+        let products = await resp2.json();
+
+        products.forEach((product) => {
+          const option = document.createElement("option");
+          option.innerText = `${product.name}`;
+          option.value = product.id;
+          productSelet.appendChild(option);
+        });
+
+        const buyBtn = document.createElement("button");
+        buyBtn.innerText = "Buy";
+        buyBtn.onclick = async () => {
+          const resp = await fetch("http://127.0.0.1:5000/purchases/");
+          let purchases = await resp.json();
+
+          const date = new Date();
+          const currday =
+            date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
+
+          const obj = {
+            customerId: customerSelet.value,
+            date: `${date.getFullYear()}-${date.getMonth() + 1}-${currday}`,
+            id: purchases.length + 1,
+            productId: productSelet.value,
+          };
+
+          const fetchParams = {
+            method: "POST",
+            body: JSON.stringify(obj),
+            headers: { "Content-type": "application/json" },
+          };
+          const response = await fetch(
+            "http://127.0.0.1:5000/purchases/",
+            fetchParams
+          );
+
+          console.log(currday);
+          location.reload();
+        };
+        buyProductDiv.appendChild(buyBtn);
+      }
+    </script>
+  </body>
+</html>

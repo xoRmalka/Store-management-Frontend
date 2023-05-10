@@ -1,0 +1,179 @@
+<html>
+  <body onload="load()">
+    <h1>Purchases</h1>
+
+    <div id="serach" style="border: thin solid #000">
+      Select Customer:
+      <select id="customerSelect">
+        <option disabled selected value="0"></option>
+      </select>
+      <br />
+      Select Product:
+
+      <select id="productSelect">
+        <option disabled selected value="0"></option>
+      </select>
+      <br />
+      Date: <input id="date" type="date" />
+      <br />
+      <button onclick="serach()" id="btn">Click</button>
+      <br />
+      <table border="1" id="tbl">
+        <tr>
+          <td>Customer Name</td>
+          <td>list of products</td>
+        </tr>
+      </table>
+    </div>
+    <script>
+      const customerSelect = document.getElementById("customerSelect");
+      const productSelect = document.getElementById("productSelect");
+      const date = document.getElementById("date");
+
+      async function load() {
+        const resp = await fetch("http://127.0.0.1:5000/customers");
+        let customers = await resp.json();
+        customers.forEach((customer) => {
+          const option = document.createElement("option");
+          option.innerText = `${customer.fName} ${customer.lName}`;
+          option.value = customer.id;
+          customerSelect.appendChild(option);
+        });
+        const resp2 = await fetch("http://127.0.0.1:5000/products");
+        let products = await resp2.json();
+
+        products.forEach((product) => {
+          const option = document.createElement("option");
+          option.innerText = `${product.name}`;
+          option.value = product.id;
+          productSelect.appendChild(option);
+        });
+      }
+
+      async function serach() {
+        const tbl = document.getElementById("tbl");
+        const tblRows = tbl.getElementsByTagName("tr");
+
+        for (let i = tblRows.length; i > 1; i--) {
+          tbl.deleteRow(tblRows[i]);
+        }
+
+        const resp2 = await fetch("http://127.0.0.1:5000/purchases/");
+        let purchases = await resp2.json();
+        if (customerSelect.value != 0 && parseInt(productSelect.value) != 0) {
+          purchases.map(async (p) => {
+            if (
+              p.date === date.value &&
+              p.customerId === customerSelect.value &&
+              p.productId === parseInt(productSelect.value)
+            ) {
+              const customerresp = await fetch(
+                `http://127.0.0.1:5000/customers/${p.customerId}`
+              );
+              let customerdata = await customerresp.json();
+
+              const productresp = await fetch(
+                `http://127.0.0.1:5000/products/${p.productId}`
+              );
+              let productdata = await productresp.json();
+
+              const tr = document.createElement("tr");
+              const cName = document.createElement("td");
+              const pName = document.createElement("td");
+              cName.innerText = `${customerdata.fName} ${customerdata.lName}`;
+              pName.innerText = productdata.name;
+
+              tr.appendChild(cName);
+              tr.appendChild(pName);
+              tbl.appendChild(tr);
+            }
+          });
+        } else if (
+          customerSelect.value == 0 &&
+          parseInt(productSelect.value) != 0
+        ) {
+          purchases.map(async (p) => {
+            if (
+              p.date === date.value &&
+              p.productId === parseInt(productSelect.value)
+            ) {
+              const customerresp = await fetch(
+                `http://127.0.0.1:5000/customers/${p.customerId}`
+              );
+              let customerdata = await customerresp.json();
+
+              const productresp = await fetch(
+                `http://127.0.0.1:5000/products/${p.productId}`
+              );
+              let productdata = await productresp.json();
+
+              const tr = document.createElement("tr");
+              const cName = document.createElement("td");
+              const pName = document.createElement("td");
+              cName.innerText = `${customerdata.fName} ${customerdata.lName}`;
+              pName.innerText = productdata.name;
+
+              tr.appendChild(cName);
+              tr.appendChild(pName);
+              tbl.appendChild(tr);
+            }
+          });
+        } else if (
+          customerSelect.value != 0 &&
+          parseInt(productSelect.value) == 0
+        ) {
+          purchases.map(async (p) => {
+            if (
+              p.date === date.value &&
+              p.customerId === customerSelect.value
+            ) {
+              const customerresp = await fetch(
+                `http://127.0.0.1:5000/customers/${p.customerId}`
+              );
+              let customerdata = await customerresp.json();
+
+              const productresp = await fetch(
+                `http://127.0.0.1:5000/products/${p.productId}`
+              );
+              let productdata = await productresp.json();
+
+              const tr = document.createElement("tr");
+              const cName = document.createElement("td");
+              const pName = document.createElement("td");
+              cName.innerText = `${customerdata.fName} ${customerdata.lName}`;
+              pName.innerText = productdata.name;
+
+              tr.appendChild(cName);
+              tr.appendChild(pName);
+              tbl.appendChild(tr);
+            }
+          });
+        } else if (customerSelect.value == 0 && productSelect.value == 0) {
+          purchases.map(async (p) => {
+            if (p.date === date.value) {
+              const customerresp = await fetch(
+                `http://127.0.0.1:5000/customers/${p.customerId}`
+              );
+              let customerdata = await customerresp.json();
+
+              const productresp = await fetch(
+                `http://127.0.0.1:5000/products/${p.productId}`
+              );
+              let productdata = await productresp.json();
+
+              const tr = document.createElement("tr");
+              const cName = document.createElement("td");
+              const pName = document.createElement("td");
+              cName.innerText = `${customerdata.fName} ${customerdata.lName}`;
+              pName.innerText = productdata.name;
+
+              tr.appendChild(cName);
+              tr.appendChild(pName);
+              tbl.appendChild(tr);
+            }
+          });
+        }
+      }
+    </script>
+  </body>
+</html>
